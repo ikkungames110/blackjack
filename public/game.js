@@ -1,5 +1,6 @@
 import {
   ACTION_NAMES, hiLo, handInfo, simpleStrategy, generalStrategy, countStrategy, computeEVs,
+  SIMPLE, GENERAL, DEVIATIONS, col, chartRowKey,
 } from './engine.js';
 
 const CHIPS = [5, 10, 50, 100, 500, 1000];
@@ -419,6 +420,102 @@ function render() {
   $('usedTotal').textContent = `計 ${seenTotal()} 枚`;
 
   renderStats();
+  renderCharts();
+  renderDeviations();
+}
+
+// ---------- 戦略表・TC変化ポイント ----------
+
+const CHART_ROWS = (() => {
+  const rows = [{ key: 'h8', label: '3〜8', kind: 'hard', n: 8 }];
+  for (let t = 9; t <= 16; t++) rows.push({ key: `h${t}`, label: String(t), kind: 'hard', n: t });
+  rows.push({ key: 'h17', label: '17〜20', kind: 'hard', n: 17 });
+  for (let o = 2; o <= 9; o++) rows.push({ key: `s${o + 11}`, label: `A-${o}`, kind: 'soft', n: o + 11 });
+  for (let v = 2; v <= 10; v++) rows.push({ key: `p${v}`, label: `${v}-${v}`, kind: 'pair', n: v });
+  rows.push({ key: 'p1', label: 'A-A', kind: 'pair', n: 1 });
+  return rows;
+})();
+const UPS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 1];
+const CELL_TEXT = { H: 'H', S: 'S', D: 'DD', P: 'SP' };
+const upLabel = (up) => (up === 1 ? 'A' : String(up));
+const devKey = (d) => (d.pair ? `p${d.pair}` : `h${d.hard}`);
+const devLabel = (d) => (d.pair ? `${d.pair}-${d.pair}` : String(d.hard));
+const chartCode = (chart, kind, n, up) => chart[kind](n)[col(up)];
+const fmtIndex = (i) => (i > 0 ? `+${i}` : String(i));
+
+// プレイ中のハンドが表のどのマスか
+function currentCell() {
+  if (state.phase !== 'player') return null;
+  const h = state.hands[state.active];
+  if (!h || h.done) return null;
+  const key = chartRowKey(values(h.cards), canSplit(h));
+  return key ? { key, up: state.dealer[0].v } : null;
+}
+
+function chartHTML(chart, withDev) {
+  const cur = currentCell();
+  const tc = trueCount();
+  const head = `<tr><th></th>${UPS.map((u) => `<th class="${cur && cur.up === u ? 'cur' : ''}">${upLabel(u)}</th>`).join('')}</tr>`;
+  let prevKind = 'hard';
+  const body = CHART_ROWS.map((r) => {
+    const sep = r.kind !== prevKind ? 'sep' : '';
+    prevKind = r.kind;
+    const rowCur = cur && cur.key === r.key;
+    const cells = UPS.map((u) => {
+      const code = chartCode(chart, r.kind, r.n, u);
+      let mark = '';
+      let changed = false;
+      if (withDev) {
+        const d = DEVIATIONS.find((x) => devKey(x) === r.key && x.up === u);
+        if (d) {
+          changed = (tc >= d.index ? d.yes : d.no) !== code;
+          mark = `<sup>${fmtIndex(d.index)}</sup>`;
+        }
+      }
+      const isCur = rowCur && cur.up === u;
+      return `<td class="${code} ${changed ? 'changed' : ''} ${isCur ? 'cur' : ''}">${CELL_TEXT[code]}${mark}</td>`;
+    }).join('');
+    return `<tr class="${sep}"><th class="${rowCur ? 'cur' : ''}">${r.label}</th>${cells}</tr>`;
+  }).join('');
+  return `<table class="strategy"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
+
+function renderCharts() {
+  if (!$('simplePanel').classList.contains('hidden')) $('simpleChart').innerHTML = chartHTML(SIMPLE, false);
+  if (!$('generalPanel').classList.contains('hidden')) $('generalChart').innerHTML = chartHTML(GENERAL, true);
+}
+
+function renderDeviations() {
+  if ($('devPanel').classList.contains('hidden')) return;
+  const tc = trueCount();
+  $('devTc').textContent = (tc > 0 ? '+' : '') + tc.toFixed(1);
+  const sorted = [...DEVIATIONS].sort((a, b) => b.index - a.index || devLabel(a).localeCompare(devLabel(b)));
+  const above = sorted.filter((d) => d.index > tc);
+  const nextUp = above.length ? above[above.length - 1].index : null;
+  const below = sorted.filter((d) => d.index <= tc);
+  const nextDown = below.length ? below[0].index : null;
+  const cur = currentCell();
+  const items = [];
+  let dividerDone = false;
+  for (const d of sorted) {
+    if (!dividerDone && d.index <= tc) {
+      items.push(`<li class="now">現在 TC ${(tc > 0 ? '+' : '') + tc.toFixed(1)}</li>`);
+      dividerDone = true;
+    }
+    const kind = d.pair ? 'pair' : 'hard';
+    const table = chartCode(GENERAL, kind, d.pair || d.hard, d.up);
+    const now = tc >= d.index ? d.yes : d.no;
+    const tag = d.index === nextUp ? '<b class="up">▲</b>' : d.index === nextDown ? '<b class="down">▼</b>' : '';
+    const here = cur && cur.key === devKey(d) && cur.up === d.up;
+    const yesOn = tc >= d.index;
+    items.push(`<li class="${here ? 'here' : ''}">
+      <span class="idx">${fmtIndex(d.index)}</span>
+      <span class="what">${tag}${devLabel(d)} vs ${upLabel(d.up)}${now !== table ? '<span class="diff">表と違う</span>' : ''}</span>
+      <span class="rule"><span class="badge ${d.yes} ${yesOn ? '' : 'off'}" title="${fmtIndex(d.index)} 以上">${ACTION_NAMES[d.yes]}</span><span class="badge ${d.no} ${yesOn ? 'off' : ''}" title="${fmtIndex(d.index)} 未満">${ACTION_NAMES[d.no]}</span></span>
+    </li>`);
+  }
+  if (!dividerDone) items.push(`<li class="now">現在 TC ${(tc > 0 ? '+' : '') + tc.toFixed(1)}</li>`);
+  $('devList').innerHTML = items.join('');
 }
 
 // ---------- イベント ----------
@@ -447,12 +544,17 @@ function bindToggle(id, panelId, key) {
   const apply = () => {
     $(panelId).classList.toggle('hidden', !input.checked);
     save(key, input.checked);
+    renderCharts();
+    renderDeviations();
   };
   input.addEventListener('change', apply);
   apply();
 }
 bindToggle('toggleCards', 'cardsPanel', 'bj-show-cards');
 bindToggle('toggleCount', 'countPanel', 'bj-show-count');
+bindToggle('toggleDev', 'devPanel', 'bj-show-dev');
+bindToggle('toggleSimple', 'simplePanel', 'bj-show-simple');
+bindToggle('toggleGeneral', 'generalPanel', 'bj-show-general');
 
 document.addEventListener('keydown', (e) => {
   if (e.target.closest('input, textarea')) return;

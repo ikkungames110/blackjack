@@ -22,10 +22,20 @@ export function handInfo(values) {
 }
 
 // 列: ディーラーのアップカード 2,3,4,5,6,7,8,9,10,A
-const col = (up) => (up === 1 ? 9 : up - 2);
+export const col = (up) => (up === 1 ? 9 : up - 2);
+
+// 表の行キー（h=ハード, s=ソフト, p=ペア）。表にない手は null
+export function chartRowKey(values, canSplit) {
+  if (values.length === 2 && values[0] === values[1] && canSplit) return `p${values[0]}`;
+  const info = handInfo(values);
+  if (info.soft) return info.best >= 13 && info.best <= 20 ? `s${info.best}` : null;
+  if (info.best <= 8) return 'h8';
+  if (info.best <= 16) return `h${info.best}`;
+  return info.best <= 20 ? 'h17' : null;
+}
 
 // ---- 簡易版最適戦略 ----
-const SIMPLE = {
+export const SIMPLE = {
   hard(t) {
     if (t <= 9) return 'HHHHHHHHHH';
     if (t <= 11) return 'DDDDDDDDDD';
@@ -33,6 +43,7 @@ const SIMPLE = {
     return 'SSSSSSSSSS';
   },
   soft(t) {
+    if (t <= 12) return 'HHHHHHHHHH';
     if (t <= 18) return 'DDDDDHHHHH';
     return 'SSSSSSSSSS';
   },
@@ -45,7 +56,7 @@ const SIMPLE = {
 };
 
 // ---- 一般の最適戦略 ----
-const GENERAL = {
+export const GENERAL = {
   hard(t) {
     if (t <= 8) return 'HHHHHHHHHH';
     if (t === 9) return 'HDDDDHHHHH';
@@ -56,6 +67,7 @@ const GENERAL = {
     return 'SSSSSSSSSS';
   },
   soft(t) {
+    if (t <= 12) return 'HHHHHHHHHH';
     if (t <= 17) return 'HHDDDHHHHH';
     if (t === 18) return 'SDDDDSSHHH';
     return 'SSSSSSSSSS';
@@ -70,7 +82,7 @@ const GENERAL = {
 
 // Illustrious 18（保険を除く 17 項目、マルチデッキ・S17）
 // tc >= index なら yes、未満なら no
-const DEVIATIONS = [
+export const DEVIATIONS = [
   { hard: 16, up: 10, index: 0, yes: 'S', no: 'H' },
   { hard: 15, up: 10, index: 4, yes: 'S', no: 'H' },
   { pair: 10, up: 5, index: 5, yes: 'P', no: 'S' },

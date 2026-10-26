@@ -43,6 +43,9 @@ body {
 .bank .label { font-size: 0.8rem; color: #e6d3b5; }
 .money { font-size: 1.5rem; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
 
+.main-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; align-items: start; }
+.charts:not(:has(.panel:not(.hidden))) { display: none; }
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
@@ -61,7 +64,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  align-self: start;
   min-height: 620px;
   padding: 18px 20px 20px;
   border-radius: 24px;
@@ -284,3 +286,54 @@ table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 .rules summary { cursor: pointer; font-weight: 700; color: var(--gold); }
 .rules h3 { font-size: 0.88rem; margin: 12px 0 4px; }
 .rules ul { margin: 8px 0 0; padding-left: 1.2em; font-size: 0.84rem; line-height: 1.7; color: #cfe0d6; }
+
+/* ---- 戦略表 ---- */
+.hint { margin: 0 0 10px; font-size: 0.78rem; line-height: 1.6; color: var(--muted); }
+.chart + .hint { margin: 10px 0 0; }
+.hint .up, .devs .up { color: var(--ok); }
+.hint .down, .devs .down { color: var(--ng); }
+.strategy { table-layout: fixed; font-size: 0.78rem; text-align: center; border-collapse: separate; border-spacing: 1px; }
+.strategy th { padding: 3px 0; font-weight: 700; color: var(--muted); background: rgba(255, 255, 255, 0.05); }
+.strategy thead th:first-child, .strategy tbody th { width: 3.8em; }
+.strategy tbody th { font-size: 0.7rem; white-space: nowrap; }
+.strategy th.cur { color: #2b1d05; background: var(--gold); }
+.strategy td { position: relative; padding: 4px 0; font-weight: 800; color: #fff; }
+.strategy td.H { background: var(--hit); }
+.strategy td.S { background: var(--stand); }
+.strategy td.D { background: var(--double); }
+.strategy td.P { background: var(--split); color: #2d2200; }
+.strategy tr.sep > * { border-top: 3px solid var(--panel); }
+.strategy td sup {
+  position: absolute;
+  top: 0;
+  right: 1px;
+  font-size: 0.55rem;
+  line-height: 1;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+.strategy td.changed { box-shadow: inset 0 0 0 2px var(--gold); }
+.strategy td.changed sup { color: var(--gold); }
+.strategy td.cur { outline: 3px solid #fff; outline-offset: -1px; z-index: 1; animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { outline-color: rgba(255, 255, 255, 0.35); } }
+
+/* ---- TC変化ポイント ---- */
+.devs { list-style: none; margin: 0; padding: 0; font-size: 0.82rem; }
+.devs li { display: grid; grid-template-columns: 2.4em 1fr auto; align-items: center; gap: 8px; padding: 5px 4px; border-bottom: 1px solid var(--panel-line); }
+.devs li.here { background: rgba(232, 196, 106, 0.14); border-radius: 6px; }
+.devs .idx { font-weight: 800; font-size: 0.95rem; text-align: right; font-variant-numeric: tabular-nums; color: var(--gold); }
+.devs .what { font-weight: 700; white-space: nowrap; }
+.devs .rule { display: flex; gap: 4px; }
+.devs .badge { font-size: 0.7rem; padding: 0 6px; }
+.devs .badge.off { opacity: 0.22; }
+.diff { margin-left: 6px; padding: 0 5px; border: 1px solid var(--gold); border-radius: 4px; font-size: 0.68rem; font-weight: 700; color: var(--gold); }
+.devs li.now {
+  display: block;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--gold);
+  color: #2b1d05;
+  font-weight: 800;
+  text-align: center;
+}

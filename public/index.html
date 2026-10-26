@@ -18,6 +18,7 @@
   </header>
 
   <main class="layout">
+    <div class="main-col">
     <section class="table" aria-label="テーブル">
       <div class="shoe-info" id="shoeInfo"></div>
 
@@ -53,10 +54,27 @@
       </div>
     </section>
 
+      <div class="charts">
+        <section class="panel hidden" id="simplePanel">
+          <h2>簡易版最適戦略</h2>
+          <div class="chart" id="simpleChart"></div>
+        </section>
+
+        <section class="panel hidden" id="generalPanel">
+          <h2>一般の最適戦略</h2>
+          <div class="chart" id="generalChart"></div>
+          <p class="hint">右上の小さな数字は、Hi-Lo のトゥルーカウントで判断が切り替わる指数です。金色の枠は、いまのTCだと表と違う判断になるマスです。</p>
+        </section>
+      </div>
+    </div>
+
     <aside class="side">
       <div class="toggles">
         <label class="switch"><input type="checkbox" id="toggleCards"> <span>消費カード</span></label>
         <label class="switch"><input type="checkbox" id="toggleCount"> <span>トゥルーカウント</span></label>
+        <label class="switch"><input type="checkbox" id="toggleDev"> <span>TC変化ポイント</span></label>
+        <label class="switch"><input type="checkbox" id="toggleSimple"> <span>簡易版の表</span></label>
+        <label class="switch"><input type="checkbox" id="toggleGeneral"> <span>一般の表</span></label>
       </div>
 
       <section class="panel hidden" id="countPanel">
@@ -66,6 +84,12 @@
           <div><span class="k">残りデッキ</span><span class="v" id="decksLeft">6.0</span></div>
           <div class="tc"><span class="k">トゥルー</span><span class="v" id="tc">0.0</span></div>
         </div>
+      </section>
+
+      <section class="panel hidden" id="devPanel">
+        <h2>TC変化ポイント <small>現在 TC <span id="devTc">0.0</span></small></h2>
+        <p class="hint">トゥルーカウントの変化で判断が切り替わる場面です。上ほど高いカウントで切り替わります。<b class="up">▲</b> はTCが上がると次に変わる場面、<b class="down">▼</b> は下がると次に変わる場面。明るいほうが今の判断、<span class="diff">表と違う</span>は一般の表と判断が変わっている場面です。</p>
+        <ol class="devs" id="devList"></ol>
       </section>
 
       <section class="panel hidden" id="cardsPanel">
