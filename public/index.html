@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ブラックジャック練習台</title>
+  <meta name="description" content="6デッキのブラックジャックを遊びながら、ベーシックストラテジー・Hi-Loカウント・確率的最適解を学べる1人用ゲーム。">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🂡</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>ブラックジャック練習台</h1>
+    <div class="bank">
+      <span class="label">所持金</span>
+      <span id="bankroll" class="money">$100</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="table" aria-label="テーブル">
+      <div class="shoe-info" id="shoeInfo"></div>
+
+      <div class="area dealer">
+        <div class="area-title">ディーラー <span id="dealerTotal" class="total"></span></div>
+        <div class="cards" id="dealerCards"></div>
+      </div>
+
+      <div class="message" id="message" role="status">チップを選んで「ディール」を押してください</div>
+
+      <div class="area player">
+        <div class="hands" id="playerHands"></div>
+      </div>
+
+      <div class="controls">
+        <div class="bet-panel" id="betPanel">
+          <div class="chips" id="chips"></div>
+          <div class="bet-row">
+            <span>掛け金 <strong id="betAmount">$5</strong></span>
+            <button class="btn primary" id="dealBtn">ディール</button>
+          </div>
+        </div>
+        <div class="action-panel hidden" id="actionPanel">
+          <button class="btn act hit" data-act="H">ヒット</button>
+          <button class="btn act stand" data-act="S">スタンド</button>
+          <button class="btn act double" data-act="D">ダブル</button>
+          <button class="btn act split" data-act="P">スプリット</button>
+        </div>
+        <div class="broke hidden" id="brokePanel">
+          <p>所持金が最低掛け金 $5 を下回りました。</p>
+          <button class="btn primary" id="resetBtn">$100 からやり直す</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="toggles">
+        <label class="switch"><input type="checkbox" id="toggleCards"> <span>消費カード</span></label>
+        <label class="switch"><input type="checkbox" id="toggleCount"> <span>トゥルーカウント</span></label>
+      </div>
+
+      <section class="panel hidden" id="countPanel">
+        <h2>Hi-Lo カウント</h2>
+        <div class="count-grid">
+          <div><span class="k">ランニング</span><span class="v" id="rc">0</span></div>
+          <div><span class="k">残りデッキ</span><span class="v" id="decksLeft">6.0</span></div>
+          <div class="tc"><span class="k">トゥルー</span><span class="v" id="tc">0.0</span></div>
+        </div>
+      </section>
+
+      <section class="panel hidden" id="cardsPanel">
+        <h2>消費カード <small id="usedTotal"></small></h2>
+        <table class="used">
+          <thead><tr><th>数字</th><th>消費</th><th>残り</th><th class="bar-col"></th></tr></thead>
+          <tbody id="usedBody"></tbody>
+        </table>
+      </section>
+
+      <section class="panel" id="judgePanel">
+        <h2>今回の正解</h2>
+        <div id="judge" class="judge empty">アクションを取ると、4つの基準での正解が表示されます。</div>
+      </section>
+
+      <section class="panel">
+        <h2>正答率</h2>
+        <table class="stats" id="stats"></table>
+        <button class="btn small ghost" id="clearStats">リセット</button>
+      </section>
+
+      <details class="panel rules">
+        <summary>ルール</summary>
+        <ul>
+          <li>6デッキ。2デッキ分（104枚）以上使ったら、次のラウンド前にシャッフル</li>
+          <li>初期所持金 $100、掛け金は $5 / $10 / $50 / $100 / $500 / $1000</li>
+          <li>ブラックジャックは 3:2。ディーラーはソフト17でスタンド</li>
+          <li>ディーラーのアップカードが A か 10 のときはブラックジャックを確認（ピーク）</li>
+          <li>ダブルは最初の2枚のみ。スプリット後のダブル可。スプリットは同じ数字（10・J・Q・Kは同じ扱い）で最大4ハンドまで</li>
+          <li>A のスプリットは1枚ずつ配って終了、再スプリット不可。スプリット後の A+10 は21扱い</li>
+          <li>保険・サレンダーなし</li>
+        </ul>
+        <h3>4つの正解について</h3>
+        <ul>
+          <li><b>簡易版</b>：簡易版最適戦略の表</li>
+          <li><b>一般</b>：一般の最適戦略の表</li>
+          <li><b>一般+TC</b>：一般の表に Hi-Lo のトゥルーカウントによる変更（Illustrious 18 から保険を除いた17項目）を適用</li>
+          <li><b>完全暗記</b>：消費カードをすべて覚えている前提で、残りのカード構成から各アクションの期待値を厳密計算（スプリットは「スプリット後ダブル可・再スプリットなし」の近似）</li>
+          <li>ダブルできない場面で表が DD のときは、ソフト18はスタンド、それ以外はヒットを正解とします</li>
+        </ul>
+      </details>
+    </aside>
+  </main>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
